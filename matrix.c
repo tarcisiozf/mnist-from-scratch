@@ -1,14 +1,19 @@
 #include "matrix.h"
+#include "mem.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
 #include <math.h>
 
+#ifdef CUDA
+#include "cuda.cuh"
+#endif
+
 Matrix* matrix_create(int rows, int cols) {
-    Matrix* m = (Matrix*) malloc(sizeof(Matrix));
+    Matrix* m = (Matrix*) my_malloc(sizeof(Matrix));
     m->rows = rows;
     m->cols = cols;
-    m->data = (double*) malloc(rows * cols * sizeof(double));
+    m->data = (double *) my_malloc(rows * cols * sizeof(double));
     memset(m->data, 0, rows * cols * sizeof(double));
     return m;
 }
@@ -18,19 +23,19 @@ Matrix* matrix_from_shape(Matrix* m) {
 }
 
 Matrix* matrix_from_data(int rows, int cols, double* data) {
-    Matrix* m = (Matrix*) malloc(sizeof(Matrix));
+    Matrix* m = (Matrix*) my_malloc(sizeof(Matrix));
     m->rows = rows;
     m->cols = cols;
     m->data = data;
     return m;
 }
 
-void matrix_free(Matrix* m) {
+void matrix_destroy(Matrix* m) {
     if (m == NULL) {
         return;
     }
-    free(m->data);
-    free(m);
+    my_free(m->data);
+    my_free(m);
 }
 
 Matrix* matrix_dot(Matrix* a, Matrix* b) {
@@ -40,6 +45,13 @@ Matrix* matrix_dot(Matrix* a, Matrix* b) {
     }
 
     Matrix* c = matrix_create(a->rows, b->cols);
+#ifdef CUDA
+    cuda_matmul(
+        a->rows, a->cols, a->data,
+        b->rows, b->cols, b->data,
+        c->rows, c->cols, c->data
+    );
+#else
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < b->cols; j++) {
             double sum = 0;
@@ -49,6 +61,7 @@ Matrix* matrix_dot(Matrix* a, Matrix* b) {
             c->data[i * c->cols + j] = sum;
         }
     }
+#endif
     return c;
 }
 
@@ -100,7 +113,7 @@ Matrix* matrix_add(Matrix* a, Matrix* b) {
     }
 
     if (did_broadcast) {
-        matrix_free(b);
+        matrix_destroy(b);
     }
 
     return c;
@@ -151,7 +164,7 @@ Matrix *matrix_div(Matrix *a, Matrix *b) {
     }
 
     if (did_broadcast) {
-        matrix_free(b);
+        matrix_destroy(b);
     }
 
     return c;
@@ -233,7 +246,7 @@ double matrix_sum(Matrix* m) {
 Matrix* matrix_rand(int rows, int cols) {
     Matrix* m = matrix_create(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
-        m->data[i] = (double) rand() / RAND_MAX - 0.5;
+        m->data[i] = (double) random() / RAND_MAX - 0.5;
     }
     return m;
 }
@@ -262,8 +275,8 @@ Matrix* matrix_softmax(Matrix* m) {
         }
     }
     Matrix* out = matrix_div(c, sum);
-    matrix_free(c);
-    matrix_free(sum);
+    matrix_destroy(c);
+    matrix_destroy(sum);
     return out;
 }
 
@@ -273,7 +286,7 @@ Matrix* matrix_one_hot(const double* Y, int len) {
         m->data[i * 10 + (int) Y[i]] = 1;
     }
     Matrix* out = matrix_transpose(m);
-    matrix_free(m);
+    matrix_destroy(m);
     return out;
 }
 
@@ -285,4 +298,11 @@ Matrix* matrix_cols(Matrix* m, int start, int end) {
         }
     }
     return c;
+}
+
+void matrix_replace(Matrix** m, Matrix* new_m) {
+    if (*m != NULL) {
+        matrix_destroy(*m);
+    }
+    *m = new_m;
 }

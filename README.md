@@ -4,7 +4,7 @@ This is a simple implementation of a neural network to classify the MNIST datase
 The neural network is implemented from scratch. 
 
 This a study experiment to understand the basics of neural networks and backpropagation. 
-Not having numpy or any other library forced me to implement my own lib (see [matrix.cpp](./matrix.cpp)), with element-wise operations, broadcasting and so on.
+Not having numpy or any other library forced me to implement my own lib (see [matrix.c](matrix.c)), with element-wise operations, broadcasting and so on.
 
 ## Neural network
 

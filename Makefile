@@ -1,5 +1,13 @@
 cpu:
-	g++ -o train.bin main.cpp matrix.cpp engine.cpp -lm
+	gcc -o train.bin *.c -lm
 
 cuda:
-	nvcc -DCUDA -o train.bin main.cpp cuda.cu engine.cpp
+	nvcc -c -Xcompiler -fPIC cuda.cu -o cuda.o && \
+	nvcc -shared -o libmnist_cuda.so cuda.o && \
+	gcc -DCUDA -I. *.c -o train.bin -lm \
+		-L. -lmnist_cuda \
+		-L/usr/local/cuda/lib64 -lcudart \
+		-Wl,-rpath='$ORIGIN:./:/usr/local/cuda/lib64'
+
+clean:
+	rm -rf *.o *.so *.bin

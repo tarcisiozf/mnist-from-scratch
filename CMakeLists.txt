@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.28)
-project(mnist_from_scratch CUDA)
+project(mnist_from_scratch)
 
-set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_C_STANDARD 23)
 
-add_executable(mnist_from_scratch main.cpp
-        matrix.cpp
+add_executable(mnist_from_scratch main.c
+        matrix.c
         matrix.h
-        engine.cpp
+        engine.c
         engine.h
-        cuda.cu)
+        matrix.c
+        dataset.c
+        dataset.h
+        params.c
+        params.h
+        batch.c
+        batch.h
+        mem.c
+        mem.h)

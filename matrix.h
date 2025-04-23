@@ -1,4 +1,7 @@
-typedef struct {
+#ifndef MNIST_FROM_SCRATCH_MATRIX_H
+#define MNIST_FROM_SCRATCH_MATRIX_H
+
+typedef struct Matrix {
     int rows;
     int cols;
     double* data;
@@ -10,7 +13,7 @@ Matrix* matrix_from_shape(Matrix* m);
 
 Matrix* matrix_from_data(int rows, int cols, double* data);
 
-void matrix_free(Matrix* m);
+void matrix_destroy(Matrix* m);
 
 Matrix* matrix_dot(Matrix* a, Matrix* b);
 
@@ -41,3 +44,7 @@ Matrix* matrix_softmax(Matrix* m);
 Matrix* matrix_one_hot(const double* Y, int len);
 
 Matrix* matrix_cols(Matrix* m, int start, int end);
+
+void matrix_replace(Matrix** m, Matrix* new_m);
+
+#endif //MNIST_FROM_SCRATCH_MATRIX_H
