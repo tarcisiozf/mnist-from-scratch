@@ -9,8 +9,8 @@
 
 #include "params.h"
 
-Parameters* gradient_descent(Matrix* X, double* Y, int Y_len, double lr, int epochs);
+Parameters* gradient_descent(Matrix* X, float* Y, int Y_len, float lr, int epochs);
 
-void eval(Matrix* X, double* Y, int N, Parameters* params);
+void eval(Matrix* X, float* Y, int N, Parameters* params);
 
 #endif //MNIST_FROM_SCRATCH_ENGINE_H

@@ -4,11 +4,11 @@
 
 typedef struct Batch {
     Matrix* X;
-    double* Y;
+    float* Y;
     int size;
 } Batch;
 
-Batch* create_mini_batch(Matrix* X, double* Y, int N, int batch_size);
+Batch* create_mini_batch(Matrix* X, float* Y, int N, int batch_size);
 
 void batch_destroy(Batch* batch);
 

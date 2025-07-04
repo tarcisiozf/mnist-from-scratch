@@ -8,9 +8,9 @@
 
 typedef struct BackwardParameters {
     Matrix* W1;
-    double b1;
+    float b1;
     Matrix* W2;
-    double b2;
+    float b2;
 } BackwardParameters;
 
 Parameters* init_params() {
@@ -46,11 +46,11 @@ Matrix* deriv_relu(Matrix* m) {
     return c;
 }
 
-BackwardParameters* backprop(Parameters* forward_params, Matrix* W2, Matrix* X, double* Y, int N) {
+BackwardParameters* backprop(Parameters* forward_params, Matrix* W2, Matrix* X, float* Y, int N) {
     BackwardParameters* back_params = (BackwardParameters*) my_malloc(sizeof(BackwardParameters));
 
     int m = N;
-    double f = 1 / (double ) m;
+    float f = 1 / (float ) m;
     Matrix* ohY = matrix_one_hot(Y, N);
     Matrix* dZ2 = matrix_sub(forward_params->b2, ohY);
     Matrix *a1T = matrix_transpose(forward_params->W1);
@@ -80,7 +80,7 @@ BackwardParameters* backprop(Parameters* forward_params, Matrix* W2, Matrix* X, 
     return back_params;
 }
 
-void update_params(Parameters* params, BackwardParameters* back_params, double lr) {
+void update_params(Parameters* params, BackwardParameters* back_params, float lr) {
     Matrix *dw1Lr = matrix_mulf(back_params->W1, lr);
     Matrix* W1 = matrix_sub(params->W1, dw1Lr);
     Matrix* b1 = matrix_subf(params->b1, back_params->b1 * lr);
@@ -101,10 +101,10 @@ void update_params(Parameters* params, BackwardParameters* back_params, double l
     params->b2 = b2;
 }
 
-double* prediction(Matrix *a2) {
-    double* out = (double*) my_malloc(a2->cols * sizeof(double));
+float* prediction(Matrix *a2) {
+    float* out = my_malloc(a2->cols * sizeof(float));
     for (int x = 0; x < a2->cols; x++) {
-        double max = 0;
+        float max = 0;
         int idx = 0;
         for (int y = 0; y < a2->rows; y++) {
             if (a2->data[y * a2->cols + x] > max) {
@@ -117,14 +117,14 @@ double* prediction(Matrix *a2) {
     return out;
 }
 
-double accuracy(const double* predictions, const double* groundTruth, const int n) {
+float accuracy(const float* predictions, const float* groundTruth, const int n) {
     int correct = 0;
     for (int i = 0; i < n; i++) {
         if (predictions[i] == groundTruth[i]) {
             correct++;
         }
     }
-    return ((double) correct) / ((double) n);
+    return ((float) correct) / ((float) n);
 }
 
 void backward_parameters_destroy(BackwardParameters* params) {
@@ -133,7 +133,7 @@ void backward_parameters_destroy(BackwardParameters* params) {
     my_free(params);
 }
 
-Parameters* gradient_descent(Matrix* X, double* Y, int N, double lr, int epochs) {
+Parameters* gradient_descent(Matrix* X, float* Y, int N, float lr, int epochs) {
     Parameters* params = init_params();
 
     int batch_size = 100;
@@ -146,7 +146,7 @@ Parameters* gradient_descent(Matrix* X, double* Y, int N, double lr, int epochs)
         update_params(params, backward_params, lr);
         if (i % 50 == 0 || i == epochs - 1) {
             printf("Epoch %d\n", i);
-            double* pred = prediction(forward_params->b2);
+            float* pred = prediction(forward_params->b2);
             printf("Accuracy: %f\n", accuracy(pred, batch->Y, batch->size));
             my_free(pred);
         }
@@ -160,9 +160,9 @@ Parameters* gradient_descent(Matrix* X, double* Y, int N, double lr, int epochs)
     return params;
 }
 
-void eval(Matrix* X, double* Y, int N, Parameters* input) {
+void eval(Matrix* X, float* Y, int N, Parameters* input) {
     Parameters* params = forward(input, X);
-    double* pred = prediction(params->b2);
+    float* pred = prediction(params->b2);
     printf("Eval accuracy: %f\n", accuracy(pred, Y, N));
     my_free(pred);
     params_destroy(params);

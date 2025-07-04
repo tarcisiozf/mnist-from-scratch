@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 Parameters* params_create() {
-    Parameters* p = (Parameters*) my_malloc(sizeof(Parameters));
+    Parameters* p = my_malloc(sizeof(Parameters));
     p->W1 = NULL;
     p->b1 = NULL;
     p->W2 = NULL;

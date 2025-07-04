@@ -10,11 +10,11 @@
 #endif
 
 Matrix* matrix_create(int rows, int cols) {
-    Matrix* m = (Matrix*) my_malloc(sizeof(Matrix));
+    Matrix* m = my_malloc(sizeof(Matrix));
     m->rows = rows;
     m->cols = cols;
-    m->data = (double *) my_malloc(rows * cols * sizeof(double));
-    memset(m->data, 0, rows * cols * sizeof(double));
+    m->data = (float *) my_malloc(rows * cols * sizeof(float));
+    memset(m->data, 0, rows * cols * sizeof(float));
     return m;
 }
 
@@ -22,8 +22,8 @@ Matrix* matrix_from_shape(Matrix* m) {
     return matrix_create(m->rows, m->cols);
 }
 
-Matrix* matrix_from_data(int rows, int cols, double* data) {
-    Matrix* m = (Matrix*) my_malloc(sizeof(Matrix));
+Matrix* matrix_from_data(int rows, int cols, float* data) {
+    Matrix* m = my_malloc(sizeof(Matrix));
     m->rows = rows;
     m->cols = cols;
     m->data = data;
@@ -54,7 +54,7 @@ Matrix* matrix_dot(Matrix* a, Matrix* b) {
 #else
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < b->cols; j++) {
-            double sum = 0;
+            float sum = 0;
             for (int k = 0; k < a->cols; k++) {
                 sum += a->data[i * a->cols + k] * b->data[k * b->cols + j];
             }
@@ -170,7 +170,7 @@ Matrix *matrix_div(Matrix *a, Matrix *b) {
     return c;
 }
 
-Matrix* matrix_divf(Matrix* a, double f) {
+Matrix* matrix_divf(Matrix* a, float f) {
     Matrix* c = matrix_from_shape(a);
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < a->cols; j++) {
@@ -180,7 +180,7 @@ Matrix* matrix_divf(Matrix* a, double f) {
     return c;
 }
 
-Matrix* matrix_subf(Matrix* m, double f) {
+Matrix* matrix_subf(Matrix* m, float f) {
     Matrix* c = matrix_from_shape(m);
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
@@ -190,7 +190,7 @@ Matrix* matrix_subf(Matrix* m, double f) {
     return c;
 }
 
-Matrix* matrix_mulf(Matrix* m, double f) {
+Matrix* matrix_mulf(Matrix* m, float f) {
     Matrix* c = matrix_from_shape(m);
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
@@ -229,13 +229,13 @@ void matrix_print(char* label, Matrix* m, int y, int x) {
 }
 
 // Uses Kahan summation for better precision
-double matrix_sum(Matrix* m) {
-    double sum = 0.0;
-    double c = 0.0;
+float matrix_sum(Matrix* m) {
+    float sum = 0.0;
+    float c = 0.0;
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
-            double y = m->data[i * m->cols + j] - c;
-            double t = sum + y;
+            float y = m->data[i * m->cols + j] - c;
+            float t = sum + y;
             c = (t - sum) - y;
             sum = t;
         }
@@ -246,7 +246,7 @@ double matrix_sum(Matrix* m) {
 Matrix* matrix_rand(int rows, int cols) {
     Matrix* m = matrix_create(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
-        m->data[i] = (double) random() / RAND_MAX - 0.5;
+        m->data[i] = (float) random() / RAND_MAX - 0.5;
     }
     return m;
 }
@@ -254,7 +254,7 @@ Matrix* matrix_rand(int rows, int cols) {
 Matrix* matrix_relu(Matrix* m) {
     Matrix* c = matrix_from_shape(m);
     int idx;
-    double val;
+    float val;
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
             idx = i * m->cols + j;
@@ -280,7 +280,7 @@ Matrix* matrix_softmax(Matrix* m) {
     return out;
 }
 
-Matrix* matrix_one_hot(const double* Y, int len) {
+Matrix* matrix_one_hot(const float* Y, int len) {
     Matrix* m = matrix_create(len, 10); // int(max)+1
     for (int i = 0; i < len; i++) {
         m->data[i * 10 + (int) Y[i]] = 1;

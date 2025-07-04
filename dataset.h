@@ -4,7 +4,7 @@
 
 typedef struct Dataset {
     Matrix* X;
-    double* Y;
+    float* Y;
     int N;
 } Dataset;
 

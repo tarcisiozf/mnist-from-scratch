@@ -1,9 +1,9 @@
-__global__ void matrixMultiplyKernel(double *A, double *B, double *C, int N, int M, int K) {
+__global__ void matrixMultiplyKernel(float *A, float *B, float *C, int N, int M, int K) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (row < N && col < K) {
-        double value = 0;
+        float value = 0;
 
         for (int i = 0; i < M; ++i) {
             value += A[row * M + i] * B[i * K + col];
@@ -14,15 +14,15 @@ __global__ void matrixMultiplyKernel(double *A, double *B, double *C, int N, int
 }
 
 extern "C" void cuda_matmul(
-    int row_a, int col_a, double* data_a, 
-    int row_b, int col_b, double* data_b, 
-    int row_c, int col_c, double* data_c
+    int row_a, int col_a, float* data_a,
+    int row_b, int col_b, float* data_b,
+    int row_c, int col_c, float* data_c
 ) {
-    double *d_A, *d_B, *d_C;
+    float *d_A, *d_B, *d_C;
 
-    size_t size_A = row_a * col_a * sizeof(double);
-    size_t size_B = row_b * col_b * sizeof(double);
-    size_t size_C = row_a * col_b * sizeof(double);
+    size_t size_A = row_a * col_a * sizeof(float);
+    size_t size_B = row_b * col_b * sizeof(float);
+    size_t size_C = row_a * col_b * sizeof(float);
 
     cudaMalloc((void**)&d_A, size_A);
     cudaMalloc((void**)&d_B, size_B);
