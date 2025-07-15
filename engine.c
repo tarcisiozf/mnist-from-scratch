@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
-#include "engine.h"
+#include <pthread.h>
+#include <unistd.h>
 
+#include "engine.h"
 #include "batch.h"
 #include "mem.h"
 
@@ -47,10 +49,10 @@ Matrix* deriv_relu(Matrix* m) {
 }
 
 BackwardParameters* backprop(Parameters* forward_params, Matrix* W2, Matrix* X, double* Y, int N) {
-    BackwardParameters* back_params = (BackwardParameters*) my_malloc(sizeof(BackwardParameters));
+    BackwardParameters* back_params = my_malloc(sizeof(BackwardParameters));
 
-    int m = N;
-    double f = 1 / (double ) m;
+    const int m = N;
+    const double f = 1 / (double ) m;
     Matrix* ohY = matrix_one_hot(Y, N);
     Matrix* dZ2 = matrix_sub(forward_params->b2, ohY);
     Matrix *a1T = matrix_transpose(forward_params->W1);
@@ -133,30 +135,76 @@ void backward_parameters_destroy(BackwardParameters* params) {
     my_free(params);
 }
 
-Parameters* gradient_descent(Matrix* X, double* Y, int N, double lr, int epochs) {
+typedef struct Foo {
+    Matrix* X;
+    double* Y;
+    int N;
+    double lr;
+    int epochs;
+} Foo;
+
+void* foo(void* arg) {
+    Foo* foo = arg;
     Parameters* params = init_params();
 
     int batch_size = 100;
 
-    for (int i = 0; i < epochs; i++) {
-        Batch* batch = create_mini_batch(X, Y, N, batch_size);
+    int iters = foo->epochs / 10;
+    for (int i = 0; i < iters; i++) {
+        Batch* batch = create_mini_batch(foo->X, foo->Y, foo->N, batch_size);
 
         Parameters* forward_params = forward(params, batch->X);
         BackwardParameters* backward_params = backprop(forward_params, params->W2, batch->X, batch->Y, batch->size);
-        update_params(params, backward_params, lr);
-        if (i % 50 == 0 || i == epochs - 1) {
+        update_params(params, backward_params, foo->lr); // allreduce
+        if (i % 50 == 0 || i == iters - 1) {
             printf("Epoch %d\n", i);
             double* pred = prediction(forward_params->b2);
             printf("Accuracy: %f\n", accuracy(pred, batch->Y, batch->size));
             my_free(pred);
         }
 
-
         backward_parameters_destroy(backward_params);
         params_destroy(forward_params);
         batch_destroy(batch);
     }
 
+    return params;
+}
+
+Parameters* gradient_descent(Matrix* X, double* Y, int N, double lr, int epochs) {
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    printf("Detected %ld CPUs\n", cpus);
+
+    int nt = (int)cpus;
+    pthread_t threads[nt];
+
+    Foo arg = {
+        .X = X,
+        .Y = Y,
+        .N = N,
+        .lr = lr,
+        .epochs = epochs
+    };
+
+    for (int i = 0; i < nt; i++) {
+        int errcode = pthread_create(&threads[i], NULL, foo, &arg);
+        if (errcode != 0) {
+            fprintf(stderr, "Error creating thread %d: %s\n", i, strerror(errcode));
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    void* params = NULL;
+    for (int i = 0; i < nt; i++) {
+        int errcode = pthread_join(threads[i], params);
+        if (errcode != 0) {
+            fprintf(stderr, "Error joining thread %d: %s\n", i, strerror(errcode));
+            exit(EXIT_FAILURE);
+        }
+        printf("Thread %d finished successfully\n", i);
+    }
+
+    printf("here\n");
     return params;
 }
 
