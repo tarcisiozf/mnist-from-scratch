@@ -17,24 +17,24 @@ Dataset* read_dataset(const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    Dataset* dataset = (Dataset*) my_malloc(sizeof(Dataset));
+    Dataset* dataset = my_malloc(sizeof(Dataset));
 
     uint32_t numRecords;
     fread(&numRecords, sizeof(uint32_t), 1, file);
 
     dataset->N = numRecords;
 
-    double* labels = (double*) my_malloc(numRecords * sizeof(double));
+    float* labels = my_malloc(numRecords * sizeof(float));
 
-    uint32_t* pixels = (uint32_t*) my_malloc(numRecords * NUM_PIXELS * sizeof(uint32_t));
-    double* pixelsf = (double*) my_malloc(numRecords * NUM_PIXELS * sizeof(double));
+    uint32_t* pixels = my_malloc(numRecords * NUM_PIXELS * sizeof(uint32_t));
+    float* pixelsf = my_malloc(numRecords * NUM_PIXELS * sizeof(float));
     uint32_t p;
     uint32_t label;
 
     for (uint32_t i = 0; i < numRecords; i++) {
         fread(&label, sizeof(uint32_t), 1, file);
 
-        labels[i] = label;
+        labels[i] = (float)label;
 
         for (int j = 0; j < NUM_PIXELS; j++) {
             fread(&p, sizeof(uint32_t), 1, file);
@@ -43,7 +43,7 @@ Dataset* read_dataset(const char *filename) {
     }
 
     for (int i = 0; i < numRecords * NUM_PIXELS; i++) {
-        pixelsf[i] = (double) pixels[i];
+        pixelsf[i] = (float) pixels[i];
     }
     my_free(pixels);
 

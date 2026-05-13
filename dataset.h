@@ -4,8 +4,8 @@
 
 typedef struct Dataset {
     Matrix* X;
-    double* Y;
-    int N;
+    float* Y;
+    uint32_t N;
 } Dataset;
 
 Dataset* read_dataset(const char *filename);

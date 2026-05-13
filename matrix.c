@@ -9,20 +9,20 @@
 #include "cuda.cuh"
 #endif
 
-Matrix* matrix_create(int rows, int cols) {
-    Matrix* m = (Matrix*) my_malloc(sizeof(Matrix));
+Matrix* matrix_create(const int rows, const int cols) {
+    Matrix* m = my_malloc(sizeof(Matrix));
     m->rows = rows;
     m->cols = cols;
-    m->data = (double *) my_malloc(rows * cols * sizeof(double));
-    memset(m->data, 0, rows * cols * sizeof(double));
+    m->data = (float*) my_malloc(rows * cols * sizeof(float));
+    memset(m->data, 0, rows * cols * sizeof(float));
     return m;
 }
 
-Matrix* matrix_from_shape(Matrix* m) {
+Matrix* matrix_from_shape(const Matrix* m) {
     return matrix_create(m->rows, m->cols);
 }
 
-Matrix* matrix_from_data(int rows, int cols, double* data) {
+Matrix* matrix_from_data(const int rows, const int cols, float* data) {
     Matrix* m = (Matrix*) my_malloc(sizeof(Matrix));
     m->rows = rows;
     m->cols = cols;
@@ -38,7 +38,7 @@ void matrix_destroy(Matrix* m) {
     my_free(m);
 }
 
-Matrix* matrix_dot(Matrix* a, Matrix* b) {
+Matrix* matrix_dot(const Matrix* a, const Matrix* b) {
     if (a->cols != b->rows) {
         printf("Error: Failed to multiply shapes (%d, %d) and (%d, %d)\n", a->rows, a->cols, b->rows, b->cols);
         exit(1);
@@ -54,7 +54,7 @@ Matrix* matrix_dot(Matrix* a, Matrix* b) {
 #else
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < b->cols; j++) {
-            double sum = 0;
+            float sum = 0;
             for (int k = 0; k < a->cols; k++) {
                 sum += a->data[i * a->cols + k] * b->data[k * b->cols + j];
             }
@@ -65,7 +65,7 @@ Matrix* matrix_dot(Matrix* a, Matrix* b) {
     return c;
 }
 
-Matrix* matrix_transpose(Matrix* m) {
+Matrix* matrix_transpose(const Matrix* m) {
     Matrix* t = matrix_create(m->cols, m->rows);
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
@@ -75,7 +75,7 @@ Matrix* matrix_transpose(Matrix* m) {
     return t;
 }
 
-Matrix* matrix_broadcast(Matrix* a, Matrix* b) {
+Matrix* matrix_broadcast(const Matrix* a, const Matrix* b) {
     if (a->rows == b->rows && a->cols > b->cols) {
         Matrix* c = matrix_create(b->rows, a->cols);
         for (int i = 0; i < b->rows; i++) {
@@ -98,28 +98,29 @@ Matrix* matrix_broadcast(Matrix* a, Matrix* b) {
     exit(1);
 }
 
-Matrix* matrix_add(Matrix* a, Matrix* b) {
+Matrix* matrix_add(const Matrix* a, const Matrix* b) {
     char did_broadcast = 0;
+    Matrix* m = b;
     if (a->rows != b->rows || a->cols != b->cols) {
-        b = matrix_broadcast(a, b);
+        m = matrix_broadcast(a, b);
         did_broadcast = 1;
     }
 
     Matrix* c = matrix_create(a->rows, a->cols);
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < a->cols; j++) {
-            c->data[i * c->cols + j] = a->data[i * a->cols + j] + b->data[i * b->cols + j];
+            c->data[i * c->cols + j] = a->data[i * a->cols + j] + m->data[i * m->cols + j];
         }
     }
 
     if (did_broadcast) {
-        matrix_destroy(b);
+        matrix_destroy(m);
     }
 
     return c;
 }
 
-Matrix* matrix_sub(Matrix* a, Matrix* b) {
+Matrix* matrix_sub(const Matrix* a, const Matrix* b) {
     if (a->rows != b->rows || a->cols != b->cols) {
         printf("Error: Failed to subtract shapes (%d, %d) and (%d, %d)\n", a->rows, a->cols, b->rows, b->cols);
         exit(1);
@@ -134,7 +135,7 @@ Matrix* matrix_sub(Matrix* a, Matrix* b) {
     return c;
 }
 
-Matrix* matrix_mul(Matrix* a, Matrix* b) {
+Matrix* matrix_mul(const Matrix* a, const Matrix* b) {
     if (a->rows != b->rows || a->cols != b->cols) {
         printf("Error: Failed to multiply shapes (%d, %d) and (%d, %d)\n", a->rows, a->cols, b->rows, b->cols);
         exit(1);
@@ -149,28 +150,29 @@ Matrix* matrix_mul(Matrix* a, Matrix* b) {
     return c;
 }
 
-Matrix *matrix_div(Matrix *a, Matrix *b) {
+Matrix *matrix_div(const Matrix* a, const Matrix* b) {
     char did_broadcast = 0;
+    Matrix* m = b;
     if (a->rows != b->rows || a->cols != b->cols) {
-        b = matrix_broadcast(a, b);
+        m = matrix_broadcast(a, b);
         did_broadcast = 1;
     }
 
     Matrix* c = matrix_from_shape(a);
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < a->cols; j++) {
-            c->data[i * c->cols + j] = a->data[i * a->cols + j] / b->data[i * b->cols + j];
+            c->data[i * c->cols + j] = a->data[i * a->cols + j] / m->data[i * m->cols + j];
         }
     }
 
     if (did_broadcast) {
-        matrix_destroy(b);
+        matrix_destroy(m);
     }
 
     return c;
 }
 
-Matrix* matrix_divf(Matrix* a, double f) {
+Matrix* matrix_divf(const Matrix* a, const float f) {
     Matrix* c = matrix_from_shape(a);
     for (int i = 0; i < a->rows; i++) {
         for (int j = 0; j < a->cols; j++) {
@@ -180,7 +182,7 @@ Matrix* matrix_divf(Matrix* a, double f) {
     return c;
 }
 
-Matrix* matrix_subf(Matrix* m, double f) {
+Matrix* matrix_subf(const Matrix* m, const float f) {
     Matrix* c = matrix_from_shape(m);
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
@@ -190,7 +192,7 @@ Matrix* matrix_subf(Matrix* m, double f) {
     return c;
 }
 
-Matrix* matrix_mulf(Matrix* m, double f) {
+Matrix* matrix_mulf(const Matrix* m, const float f) {
     Matrix* c = matrix_from_shape(m);
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
@@ -200,7 +202,7 @@ Matrix* matrix_mulf(Matrix* m, double f) {
     return c;
 }
 
-void matrix_print(char* label, Matrix* m, int y, int x) {
+void matrix_print(char* label, const Matrix* m, const int y, const int x) {
     printf("%s\n", label);
     int rows;
     int cols;
@@ -229,13 +231,13 @@ void matrix_print(char* label, Matrix* m, int y, int x) {
 }
 
 // Uses Kahan summation for better precision
-double matrix_sum(Matrix* m) {
-    double sum = 0.0;
-    double c = 0.0;
+float matrix_sum(const Matrix* m) {
+    float sum = 0.0f;
+    float c = 0.0f;
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
-            double y = m->data[i * m->cols + j] - c;
-            double t = sum + y;
+            const float y = m->data[i * m->cols + j] - c;
+            const float t = sum + y;
             c = (t - sum) - y;
             sum = t;
         }
@@ -243,34 +245,43 @@ double matrix_sum(Matrix* m) {
     return sum;
 }
 
-Matrix* matrix_rand(int rows, int cols) {
+Matrix* matrix_rand(const int rows, const int cols) {
     Matrix* m = matrix_create(rows, cols);
     for (int i = 0; i < rows * cols; i++) {
-        m->data[i] = (double) random() / RAND_MAX - 0.5;
+        m->data[i] = ((float)random() / (float)RAND_MAX) - 0.5f;
     }
     return m;
 }
 
-Matrix* matrix_relu(Matrix* m) {
+Matrix* matrix_relu(const Matrix* m) {
     Matrix* c = matrix_from_shape(m);
-    int idx;
-    double val;
     for (int i = 0; i < m->rows; i++) {
         for (int j = 0; j < m->cols; j++) {
-            idx = i * m->cols + j;
-            val = m->data[idx];
+            const int idx = i * m->cols + j;
+            const float val = m->data[idx];
             c->data[idx] = val > 0 ? val : 0;
         }
     }
     return c;
 }
 
-Matrix* matrix_softmax(Matrix* m) {
+Matrix* matrix_softmax(const Matrix* m) {
     Matrix* c = matrix_from_shape(m);
     Matrix* sum = matrix_create(1, m->cols);
+
+    // Subtract per-column max for numerical stability (prevents expf overflow with floats)
+    float col_max[m->cols];
+    for (int j = 0; j < m->cols; j++) {
+        col_max[j] = -INFINITY;
+        for (int i = 0; i < m->rows; i++) {
+            const float v = m->data[i * m->cols + j];
+            if (v > col_max[j]) col_max[j] = v;
+        }
+    }
+
     for (int i = 0; i < c->rows; i++) {
         for (int j = 0; j < c->cols; j++) {
-            c->data[i * c->cols + j] = exp(m->data[i * m->cols + j]);
+            c->data[i * c->cols + j] = expf(m->data[i * m->cols + j] - col_max[j]);
             sum->data[j] += c->data[i * c->cols + j];
         }
     }
@@ -280,7 +291,7 @@ Matrix* matrix_softmax(Matrix* m) {
     return out;
 }
 
-Matrix* matrix_one_hot(const double* Y, int len) {
+Matrix* matrix_one_hot(const float* Y, const int len) {
     Matrix* m = matrix_create(len, 10); // int(max)+1
     for (int i = 0; i < len; i++) {
         m->data[i * 10 + (int) Y[i]] = 1;
@@ -290,7 +301,7 @@ Matrix* matrix_one_hot(const double* Y, int len) {
     return out;
 }
 
-Matrix* matrix_cols(Matrix* m, int start, int end) {
+Matrix* matrix_cols(const Matrix* m, const int start, const int end) {
     Matrix* c = matrix_create(m->rows, end - start);
     for (int i = 0; i < m->rows; i++) {
         for (int j = start; j < end; j++) {

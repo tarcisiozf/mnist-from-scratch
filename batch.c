@@ -4,7 +4,7 @@
 #include "batch.h"
 #include "mem.h"
 
-Batch* create_mini_batch(Matrix* X, double* Y, int N, int batch_size) {
+Batch* create_mini_batch(const Matrix* X, const float* Y, const int N, const int batch_size) {
     int indices[batch_size];
     memset(indices, -1, batch_size * sizeof(int));
 
@@ -18,13 +18,13 @@ Batch* create_mini_batch(Matrix* X, double* Y, int N, int batch_size) {
         }
     }
 
-    Batch* batch = (Batch*) my_malloc(sizeof(Batch));
+    Batch* batch = my_malloc(sizeof(Batch));
     batch->size = batch_size;
     batch->X = matrix_create(X->rows, batch_size);
-    batch->Y = (double*) my_malloc(batch_size * sizeof(double));
+    batch->Y = my_malloc(batch_size * sizeof(float));
 
     for (int r = 0; r < batch_size; r++) {
-        int col = indices[r];
+        const int col = indices[r];
         for (int i = 0; i < X->rows; i++) {
             batch->X->data[i * batch->X->cols + r] = X->data[i * X->cols + col];
         }

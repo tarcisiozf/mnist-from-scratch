@@ -4,46 +4,46 @@
 typedef struct Matrix {
     int rows;
     int cols;
-    double* data;
+    float* data;
 } Matrix;
 
 Matrix* matrix_create(int rows, int cols);
 
-Matrix* matrix_from_shape(Matrix* m);
+Matrix* matrix_from_shape(const Matrix* m);
 
-Matrix* matrix_from_data(int rows, int cols, double* data);
+Matrix* matrix_from_data(int rows, int cols, float* data);
 
 void matrix_destroy(Matrix* m);
 
-Matrix* matrix_dot(Matrix* a, Matrix* b);
+Matrix* matrix_dot(const Matrix* a, const Matrix* b);
 
-Matrix* matrix_transpose(Matrix* m);
+Matrix* matrix_transpose(const Matrix* m);
 
-Matrix* matrix_add(Matrix* a, Matrix* b);
+Matrix* matrix_add(const Matrix* a, const Matrix* b);
 
-Matrix* matrix_sub(Matrix* a, Matrix* b);
+Matrix* matrix_sub(const Matrix* a, const Matrix* b);
 
-Matrix* matrix_mul(Matrix* a, Matrix* b);
+Matrix* matrix_mul(const Matrix* a, const Matrix* b);
 
-Matrix* matrix_divf(Matrix* a, double f);
+Matrix* matrix_divf(const Matrix* a, float f);
 
-Matrix* matrix_subf(Matrix* m, double f);
+Matrix* matrix_subf(const Matrix* m, float f);
 
-Matrix* matrix_mulf(Matrix* m, double f);
+Matrix* matrix_mulf(const Matrix* m, float f);
 
-double matrix_sum(Matrix* m);
+float matrix_sum(const Matrix* m);
 
-void matrix_print(char* label, Matrix* m, int y, int x);
+void matrix_print(char* label, const Matrix* m, int y, int x);
 
 Matrix* matrix_rand(int rows, int cols);
 
-Matrix* matrix_relu(Matrix* m);
+Matrix* matrix_relu(const Matrix* m);
 
-Matrix* matrix_softmax(Matrix* m);
+Matrix* matrix_softmax(const Matrix* m);
 
-Matrix* matrix_one_hot(const double* Y, int len);
+Matrix* matrix_one_hot(const float* Y, int len);
 
-Matrix* matrix_cols(Matrix* m, int start, int end);
+Matrix* matrix_cols(const Matrix* m, int start, int end);
 
 void matrix_replace(Matrix** m, Matrix* new_m);
 

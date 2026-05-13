@@ -1,5 +1,7 @@
+CCFLAGS = -O3 -Wall
+
 cpu:
-	gcc -o train.bin *.c -lm
+	gcc $(CCFLAGS) -o train.bin *.c -lm
 
 cuda:
 	nvcc -c -Xcompiler -fPIC cuda.cu -o cuda.o && \
