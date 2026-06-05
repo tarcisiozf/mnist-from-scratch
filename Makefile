@@ -1,7 +1,13 @@
-CCFLAGS = -O3 -Wall
+CCFLAGS = -O3 -Wall -std=c2x
+FILES=matrix.c engine.c mem.c params.c batch.c dataset.c mmap.c bench.c
 
-cpu:
-	gcc $(CCFLAGS) -o train.bin *.c -lm
+default: train test
+
+train: build-cpu
+	./train.bin
+
+build-cpu:
+	gcc $(CCFLAGS) -o train.bin $(FILES) main.c -lm
 
 cuda:
 	nvcc -c -Xcompiler -fPIC cuda.cu -o cuda.o && \

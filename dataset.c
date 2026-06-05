@@ -7,56 +7,29 @@
 #include <stdint.h>
 #include "dataset.h"
 #include "mem.h"
+#include "mmap.h"
 
-#define NUM_PIXELS 784
+#define DIM 14
 
 Dataset* read_dataset(const char *filename) {
-    FILE *file = fopen(filename, "rb");
-    if (!file) {
-        perror("Failed to open file");
-        exit(EXIT_FAILURE);
-    }
+    size_t size;
+    const u8* data = mopen(filename, &size);
+    size_t offset = 0;
+
+    const uint32_t numRecords = *(uint32_t*)(data + offset);
+    offset += sizeof(uint32_t);
+
+    const float* labels = (float*)(data + offset);
+    offset += numRecords * sizeof(float);
+
+    const float* vectors = (float*)(data + offset);
 
     Dataset* dataset = my_malloc(sizeof(Dataset));
-
-    uint32_t numRecords;
-    fread(&numRecords, sizeof(uint32_t), 1, file);
-
     dataset->N = numRecords;
-
-    float* labels = my_malloc(numRecords * sizeof(float));
-
-    uint32_t* pixels = my_malloc(numRecords * NUM_PIXELS * sizeof(uint32_t));
-    float* pixelsf = my_malloc(numRecords * NUM_PIXELS * sizeof(float));
-    uint32_t p;
-    uint32_t label;
-
-    for (uint32_t i = 0; i < numRecords; i++) {
-        fread(&label, sizeof(uint32_t), 1, file);
-
-        labels[i] = (float)label;
-
-        for (int j = 0; j < NUM_PIXELS; j++) {
-            fread(&p, sizeof(uint32_t), 1, file);
-            pixels[i*NUM_PIXELS + j] = p;
-        }
-    }
-
-    for (int i = 0; i < numRecords * NUM_PIXELS; i++) {
-        pixelsf[i] = (float) pixels[i];
-    }
-    my_free(pixels);
-
-    dataset->X = matrix_from_data(numRecords, NUM_PIXELS, pixelsf);
+    dataset->X = matrix_from_data(numRecords, DIM, vectors);
     dataset->Y = labels;
-
-    fclose(file);
 
     return dataset;
 }
 
-void dataset_destroy(Dataset* dataset) {
-    matrix_destroy(dataset->X);
-    my_free(dataset->Y);
-    my_free(dataset);
-}
+void dataset_destroy(Dataset* dataset) {}

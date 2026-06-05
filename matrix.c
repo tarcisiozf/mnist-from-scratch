@@ -3,7 +3,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #ifdef CUDA
 #include "cuda.cuh"
@@ -40,7 +45,7 @@ void matrix_destroy(Matrix* m) {
 
 Matrix* matrix_dot(const Matrix* a, const Matrix* b) {
     if (a->cols != b->rows) {
-        printf("Error: Failed to multiply shapes (%d, %d) and (%d, %d)\n", a->rows, a->cols, b->rows, b->cols);
+        printf("Error: Failed to get dot product shapes (%d, %d) and (%d, %d)\n", a->rows, a->cols, b->rows, b->cols);
         exit(1);
     }
 
@@ -202,27 +207,10 @@ Matrix* matrix_mulf(const Matrix* m, const float f) {
     return c;
 }
 
-void matrix_print(char* label, const Matrix* m, const int y, const int x) {
+void matrix_print(char* label, const Matrix* m) {
     printf("%s\n", label);
-    int rows;
-    int cols;
-
-    if (y == -1 && x == -1) {
-        rows = m->rows;
-        cols = m->cols;
-    } else {
-        rows = y;
-        cols = x;
-    }
-    if (rows > m->rows) {
-        rows = m->rows;
-    }
-    if (cols > m->cols) {
-        cols = m->cols;
-    }
-
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+    for (int i = 0; i < m->rows; i++) {
+        for (int j = 0; j < m->cols; j++) {
             printf("%f ", m->data[i * m->cols + j]);
         }
         printf("\n");
@@ -291,10 +279,26 @@ Matrix* matrix_softmax(const Matrix* m) {
     return out;
 }
 
-Matrix* matrix_one_hot(const float* Y, const int len) {
-    Matrix* m = matrix_create(len, 10); // int(max)+1
-    for (int i = 0; i < len; i++) {
-        m->data[i * 10 + (int) Y[i]] = 1;
+Matrix* matrix_sigmoid(const Matrix* m) {
+    Matrix* c = matrix_from_shape(m);
+    for (int i = 0; i < m->rows * m->cols; i++) {
+        const float z = m->data[i];
+        // Numerically stable sigmoid
+        if (z >= 0.0f) {
+            const float e = expf(-z);
+            c->data[i] = 1.0f / (1.0f + e);
+        } else {
+            const float e = expf(z);
+            c->data[i] = e / (1.0f + e);
+        }
+    }
+    return c;
+}
+
+Matrix* matrix_one_hot(const float* Y, const int rows, const int cols) {
+    Matrix* m = matrix_create(rows, cols); // int(max)+1
+    for (int i = 0; i < rows; i++) {
+        m->data[i * cols + (int) Y[i]] = 1;
     }
     Matrix* out = matrix_transpose(m);
     matrix_destroy(m);
@@ -316,4 +320,29 @@ void matrix_replace(Matrix** m, Matrix* new_m) {
         matrix_destroy(*m);
     }
     *m = new_m;
+}
+
+Matrix* matrix_row_sum(const Matrix* m) {
+    Matrix* c = matrix_create(m->rows, 1);
+    for (int i = 0; i < m->rows; i++) {
+        float sum = 0.0f;
+        for (int j = 0; j < m->cols; j++) {
+            sum += m->data[i * m->cols + j];
+        }
+        c->data[i] = sum;
+    }
+    return c;
+}
+
+Matrix* matrix_rand_he(const int rows, const int cols, const int fan_in) {
+    Matrix* m = matrix_create(rows, cols);
+    const float stddev = sqrtf(2.0f / (float)fan_in);
+    for (int i = 0; i < rows * cols; i++) {
+        // Box-Muller transform for normal distribution
+        float u1 = ((float)random() + 1.0f) / ((float)RAND_MAX + 1.0f);
+        float u2 = ((float)random() + 1.0f) / ((float)RAND_MAX + 1.0f);
+        float z = sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
+        m->data[i] = z * stddev;
+    }
+    return m;
 }

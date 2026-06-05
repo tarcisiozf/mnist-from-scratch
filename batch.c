@@ -10,7 +10,7 @@ Batch* create_mini_batch(const Matrix* X, const float* Y, const int N, const int
 
     for (int i = 0; i < batch_size; i++) {
         indices[i] = random() % N;
-        for (int j = 0; j < i - 1; j++) {
+        for (int j = 0; j < i; j++) {
             if (indices[j] == indices[i]) {
                 i--;
                 break;

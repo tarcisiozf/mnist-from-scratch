@@ -16,4 +16,11 @@ add_executable(mnist_from_scratch main.c
         batch.c
         batch.h
         mem.c
-        mem.h)
+        mem.h
+        mmap.h
+        mmap.c
+        evaldas.c
+        evaldas.h
+        bench.c
+        bench.h)
+

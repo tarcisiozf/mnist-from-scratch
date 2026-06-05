@@ -1,40 +1,59 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+
 #include "engine.h"
 #include "dataset.h"
+#include "evaldas.h"
 #include "mem.h"
 
-#define LEARNING_RATE 0.1
-#define EPOCHS 1000
+#define LEARNING_RATE 0.003
+#define EPOCHS 40000
+
+void write_matrix(FILE* f, const Matrix* m) {
+    const uint32_t rows = m->rows;
+    const uint32_t cols = m->cols;
+    fwrite(&rows, sizeof(uint32_t), 1, f);
+    fwrite(&cols, sizeof(uint32_t), 1, f);
+    fwrite(m->data, sizeof(float), rows*cols, f);
+}
+
+void save_params(const char* str, const Parameters* params) {
+    printf("num weights: %d\n",
+        params->W1->rows*params->W1->cols+
+        params->b1->rows*params->b1->cols+
+        params->W2->rows*params->W2->cols+
+        params->b2->rows*params->b2->cols);
+
+    FILE* f = fopen(str, "wb");
+    if (f == nullptr) {
+        printf("Error opening file\n");
+        exit(-1);
+    }
+
+    write_matrix(f, params->W1);
+    write_matrix(f, params->b1);
+    write_matrix(f, params->W2);
+    write_matrix(f, params->b2);
+    fflush(f);
+    fclose(f);
+}
 
 int main(void) {
     srandom(time(NULL));
 
-    Dataset* dataset = read_dataset("./dataset.bin");
+    const Dataset* train_dataset = read_dataset("output.bin");
+    const Parameters* params = gradient_descent(
+        matrix_transpose(train_dataset->X),
+        train_dataset->Y,
+        train_dataset->N,
+        LEARNING_RATE,
+        EPOCHS
+    );
 
-    Matrix* T = matrix_transpose(dataset->X);
-    matrix_replace(&dataset->X, matrix_divf(T, 255));
-    matrix_destroy(T);
-
-    const int N_test = 1000;
-    Matrix* X_test = matrix_cols(dataset->X, 0, N_test);
-    const float* Y_test = dataset->Y;
-
-    const int N_train = dataset->N - N_test;
-    Matrix* X_train = matrix_cols(dataset->X, N_test, dataset->N);
-    const float* Y_train = &dataset->Y[N_test];
-
-    Parameters* params = gradient_descent(X_train, Y_train, N_train, LEARNING_RATE, EPOCHS);
-    eval(X_test, Y_test, N_test, params);
-
-    params_destroy(params);
-    matrix_destroy(X_train);
-    matrix_destroy(X_test);
-    dataset_destroy(dataset);
-
-    print_memory_usage();
+    save_params("weights.bin", params);
 
     return 0;
 }
